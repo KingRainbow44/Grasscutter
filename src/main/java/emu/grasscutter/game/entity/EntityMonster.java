@@ -11,9 +11,7 @@ import emu.grasscutter.game.dungeons.enums.DungeonPassConditionType;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.*;
 import emu.grasscutter.game.quest.enums.QuestContent;
-import emu.grasscutter.game.world.Position;
-import emu.grasscutter.game.world.Scene;
-import emu.grasscutter.game.world.SceneGroupInstance;
+import emu.grasscutter.game.world.*;
 import emu.grasscutter.net.proto.AbilitySyncStateInfoOuterClass.AbilitySyncStateInfo;
 import emu.grasscutter.net.proto.AnimatorParameterValueInfoPairOuterClass.AnimatorParameterValueInfoPair;
 import emu.grasscutter.net.proto.EntityAuthorityInfoOuterClass.EntityAuthorityInfo;
@@ -249,6 +247,9 @@ public class EntityMonster extends GameEntity {
 
         // first set the challenge data
         challenge.ifPresent(c -> c.onMonsterDeath(this));
+        // Call seal battle events.
+        scene.getSealBattles().forEach(
+            battle -> battle.onMonsterDeath(this));
 
         if (scriptManager.isInit() && this.getGroupId() > 0) {
             Optional.ofNullable(scriptManager.getScriptMonsterSpawnService()).ifPresent(s -> s.onMonsterDead(this));

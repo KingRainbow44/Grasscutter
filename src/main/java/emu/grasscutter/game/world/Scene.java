@@ -22,8 +22,8 @@ import emu.grasscutter.game.props.*;
 import emu.grasscutter.game.quest.QuestGroupSuite;
 import emu.grasscutter.game.world.data.TeleportProperties;
 import emu.grasscutter.net.packet.BasePacket;
-import emu.grasscutter.net.proto.*;
 import emu.grasscutter.net.proto.AttackResultOuterClass.AttackResult;
+import emu.grasscutter.net.proto.*;
 import emu.grasscutter.net.proto.VisionTypeOuterClass.VisionType;
 import emu.grasscutter.scripts.*;
 import emu.grasscutter.scripts.constants.EventType;
@@ -34,11 +34,12 @@ import emu.grasscutter.server.packet.send.*;
 import emu.grasscutter.server.scheduler.ServerTaskScheduler;
 import emu.grasscutter.utils.objects.KahnsSort;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import lombok.*;
+
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-import lombok.*;
 
 public final class Scene {
     @Getter private final World world;
@@ -50,6 +51,7 @@ public final class Scene {
     @Getter private final Set<SpawnDataEntry> deadSpawnedEntities;
     @Getter private final Set<SceneBlock> loadedBlocks;
     @Getter private final Set<SceneGroup> loadedGroups;
+    @Getter private final List<SealBattle> sealBattles;
     @Getter private final BlossomManager blossomManager;
     private final HashSet<Integer> unlockedForces;
     private final long startWorldTime;
@@ -90,6 +92,7 @@ public final class Scene {
         this.deadSpawnedEntities = ConcurrentHashMap.newKeySet();
         this.loadedBlocks = ConcurrentHashMap.newKeySet();
         this.loadedGroups = ConcurrentHashMap.newKeySet();
+        this.sealBattles = new CopyOnWriteArrayList<>();
         this.loadedGridBlocks = new HashSet<>();
         this.npcBornEntrySet = ConcurrentHashMap.newKeySet();
         this.scriptManager = new SceneScriptManager(this);
@@ -566,6 +569,9 @@ public final class Scene {
                 });
 
         blossomManager.onTick();
+
+        // Tick seal battles.
+        this.getSealBattles().forEach(SealBattle::check);
 
         this.checkNpcGroup();
 
@@ -1264,5 +1270,23 @@ public final class Scene {
 
     public void saveGroups() {
         this.getScriptManager().getCachedGroupInstances().values().forEach(SceneGroupInstance::save);
+    }
+
+    /**
+     * Starts a battle instance.
+     *
+     * @param battle The battle instance to start.
+     */
+    public void startSealBattle(SealBattle battle) {
+        // Add the group to the scene.
+        var groupId = battle.getGroupId();
+        if (groupId != -1) {
+            this.loadDynamicGroup(groupId);
+        }
+
+        // Add the battle to the scene.
+        this.getSealBattles().add(battle);
+        // Send the battle start packet.
+        this.broadcastPacket(new PacketSealBattleBeginNotify(battle));
     }
 }

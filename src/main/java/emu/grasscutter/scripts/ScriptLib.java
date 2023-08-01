@@ -12,6 +12,7 @@ import emu.grasscutter.game.entity.gadget.platform.*;
 import emu.grasscutter.game.props.*;
 import emu.grasscutter.game.quest.enums.*;
 import emu.grasscutter.game.world.*;
+import emu.grasscutter.game.world.SealBattle;
 import emu.grasscutter.net.proto.EnterTypeOuterClass;
 import emu.grasscutter.net.proto.VisionTypeOuterClass.VisionType;
 import emu.grasscutter.scripts.constants.*;
@@ -949,8 +950,20 @@ public class ScriptLib {
         return 0;
     }
 
-    public int StartSealBattle(int gadgetId, LuaTable var2){
-        logger.warn("[LUA] unimplemented Call StartSealBattle with {} {}", gadgetId, printTable(var2));
+    public int StartSealBattle(int gadgetId, LuaTable data) {
+        var scene = this.getSceneScriptManager().getScene();
+        var sealBattle = new SealBattle(
+            scene, gadgetId, gadgetId,
+            data.get("radius").toint(),
+            data.get("kill_time").toint(),
+            data.get("max_progress").toint(),
+            data.get("monster_group_id").toint(),
+            SealBattleType.valueOf(data.get("battle_type").toint())
+        );
+
+        scene.startSealBattle(sealBattle);
+
+        logger.warn("[LUA] unimplemented Call StartSealBattle with {} {}", gadgetId, printTable(data));
         //TODO implement var2 containt int radius, int battle_time, int monster_group_id, int default_kill_charge, int auto_charge, int auto_decline, int max_energy, SealBattleType battleType
         // for type KILL_MONSTER watch group monster_group_id and afterwards trigger EVENT_SEAL_BATTLE_END with the result in param2
         return 0;
